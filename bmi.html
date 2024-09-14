@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Calculators</title>
+    <link rel="stylesheet" href="bmi.css">
+    
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="logo.png" alt="Logo" class="logo-image">
+            <span class="logo-text">Health Calculators</span>
+        </div>
+        <button onclick="window.location.href='/join_us.html';" class="header-button">Join Now</button>
+
+        <button class="nav-open-btn">Menu</button>
+    </header>
+    
+
+    <nav class="navbar">
+        <button class="nav-close-btn">&times;</button>
+        <a href="#bmi" class="navbar-link">BMI Calculator</a>
+        <a href="#bmr" class="navbar-link">BMR Calculator</a>
+        <a href="#calories" class="navbar-link">Daily Calorie Needs</a>
+        <a href="#bf" class="navbar-link">Body Fat Percentage</a>
+    </nav>
+
+    <main class="container">
+        <div class="row">
+            <section class="left">
+                <!-- Additional content can go here -->
+            </section>
+
+            <section class="right">
+                <div class="tabs">
+                    <div class="tab active" data-tab="bmi">BMI Calculator</div>
+                    <div class="tab" data-tab="bmr">BMR Calculator</div>
+                    <div class="tab" data-tab="calories">Daily Calorie Needs Calculator</div>
+                    <div class="tab" data-tab="bf">Body Fat Percentage Calculator</div>
+                </div>
+                
+                <div id="bmi" class="calculator">
+                    <h2>BMI Calculator</h2>
+                    <label for="bmi-weight">Weight (kg):</label>
+                    <input type="number" id="bmi-weight" placeholder="Enter your weight" required>
+                    <label for="bmi-height">Height (cm):</label>
+                    <input type="number" id="bmi-height" placeholder="Enter your height" required>
+                    <button onclick="calculateBMI()">Calculate BMI</button>
+                    <div id="bmi-result" class="result"></div>
+                </div>
+
+                <div id="bmr" class="calculator" style="display: none;">
+                    <h2>BMR Calculator</h2>
+                    <label for="bmr-weight">Weight (kg):</label>
+                    <input type="number" id="bmr-weight" placeholder="Enter your weight" required>
+                    <label for="bmr-height">Height (cm):</label>
+                    <input type="number" id="bmr-height" placeholder="Enter your height" required>
+                    <label for="bmr-age">Age (years):</label>
+                    <input type="number" id="bmr-age" placeholder="Enter your age" required>
+                    <label for="bmr-gender">Gender:</label>
+                    <select id="bmr-gender">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                    <button onclick="calculateBMR()">Calculate BMR</button>
+                    <div id="bmr-result" class="result"></div>
+                </div>
+                
+
+                <div id="calories" class="calculator" style="display: none;">
+                    <h2>Daily Calorie Needs Calculator</h2>
+                    <label for="calories-weight">Weight (kg):</label>
+                    <input type="number" id="calories-weight" placeholder="Enter your weight" required>
+                    <label for="calories-height">Height (cm):</label>
+                    <input type="number" id="calories-height" placeholder="Enter your height" required>
+                    <label for="calories-age">Age (years):</label>
+                    <input type="number" id="calories-age" placeholder="Enter your age" required>
+                    <label for="calories-gender">Gender:</label>
+                    <select id="calories-gender">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                    <label for="activity-level">Activity Level:</label>
+                    <select id="activity-level">
+                        <option value="sedentary">Sedentary (little or no exercise)</option>
+                        <option value="lightly-active">Lightly Active (light exercise/sports 1-3 days/week)</option>
+                        <option value="moderately-active">Moderately Active (moderate exercise/sports 3-5 days/week)</option>
+                        <option value="very-active">Very Active (hard exercise/sports 6-7 days a week)</option>
+                        <option value="extra-active">Extra Active (very hard exercise/sports and physical job)</option>
+                    </select>
+                    <button onclick="calculateCalories()">Calculate Daily Calorie Needs</button>
+                    <div id="calories-result" class="result"></div>
+                </div>
+
+                <div id="bf" class="calculator" style="display: none;">
+                    <h2>Body Fat Percentage Calculator</h2>
+                    <label for="bf-weight">Weight (kg):</label>
+                    <input type="number" id="bf-weight" placeholder="Enter your weight" required>
+                    <label for="bf-height">Height (cm):</label>
+                    <input type="number" id="bf-height" placeholder="Enter your height" required>
+                    <label for="bf-age">Age (years):</label>
+                    <input type="number" id="bf-age" placeholder="Enter your age" required>
+                    <label for="bf-gender">Gender:</label>
+                    <select id="bf-gender">
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                    </select>
+                    <label for="bf-waist">Waist Circumference (cm):</label>
+                    <input type="number" id="bf-waist" placeholder="Enter your waist circumference" required>
+                    <button onclick="calculateBodyFat()">Calculate Body Fat Percentage</button>
+                    <div id="bf-result" class="result"></div>
+                </div>
+                
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Function to switch between tabs
+        document.querySelectorAll('.tabs .tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.calculator').forEach(c => c.style.display = 'none');
+                
+                tab.classList.add('active');
+                document.getElementById(tab.getAttribute('data-tab')).style.display = 'block';
+            });
+        });
+
+        // BMI Calculator
+        function calculateBMI() {
+            const weight = parseFloat(document.getElementById('bmi-weight').value);
+            const height = parseFloat(document.getElementById('bmi-height').value) / 100;
+            if (isNaN(weight) || isNaN(height) || height <= 0) {
+                document.getElementById('bmi-result').textContent = 'Please enter valid weight and height.';
+                return;
+            }
+            const bmi = weight / (height * height);
+            let category = '';
+            if (bmi < 18.5) category = 'Underweight';
+            else if (bmi < 24.9) category = 'Normal weight';
+            else if (bmi < 29.9) category = 'Overweight';
+            else category = 'Obesity';
+            document.getElementById('bmi-result').textContent = `Your BMI is ${bmi.toFixed(2)} (${category})`;
+        }
+
+        // BMR Calculator
+        function calculateBMR() {
+            const weight = parseFloat(document.getElementById('bmr-weight').value);
+            const height = parseFloat(document.getElementById('bmr-height').value);
+            const age = parseInt(document.getElementById('bmr-age').value);
+            const gender = document.getElementById('bmr-gender').value;
+
+            if (isNaN(weight) || isNaN(height) || isNaN(age) || age <= 0) {
+                document.getElementById('bmr-result').textContent = 'Please enter valid weight, height, and age.';
+                return;
+            }
+            let bmr = 0;
+            if (gender === 'male') {
+                bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+            } else {
+                bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+            }
+            document.getElementById('bmr-result').textContent = `Your BMR is ${bmr.toFixed(2)} calories/day.`;
+        }
+
+        // Calories Calculator
+        function calculateCalories() {
+            const weight = parseFloat(document.getElementById('calories-weight').value);
+            const height = parseFloat(document.getElementById('calories-height').value);
+            const age = parseInt(document.getElementById('calories-age').value);
+            const gender = document.getElementById('calories-gender').value;
+            const activityLevel = document.getElementById('activity-level').value;
+
+            if (isNaN(weight) || isNaN(height) || isNaN(age) || age <= 0) {
+                document.getElementById('calories-result').textContent = 'Please enter valid weight, height, and age.';
+                return;
+            }
+
+            let bmr = 0;
+            if (gender === 'male') {
+                bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+            } else {
+                bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+            }
+
+            let multiplier = 1.2; // Sedentary by default
+            switch (activityLevel) {
+                case 'lightly-active': multiplier = 1.375; break;
+                case 'moderately-active': multiplier = 1.55; break;
+                case 'very-active': multiplier = 1.725; break;
+                case 'extra-active': multiplier = 1.9; break;
+            }
+
+            const dailyCalories = bmr * multiplier;
+            document.getElementById('calories-result').textContent = `Your daily calorie needs are ${dailyCalories.toFixed(2)} calories/day.`;
+        }
+
+        // Body Fat Calculator
+        function calculateBodyFat() {
+            const weight = parseFloat(document.getElementById('bf-weight').value);
+            const height = parseFloat(document.getElementById('bf-height').value);
+            const age = parseInt(document.getElementById('bf-age').value);
+            const gender = document.getElementById('bf-gender').value;
+            const waist = parseFloat(document.getElementById('bf-waist').value);
+
+            if (isNaN(weight) || isNaN(height) || isNaN(age) || isNaN(waist) || age <= 0) {
+                document.getElementById('bf-result').textContent = 'Please enter valid weight, height, age, and waist circumference.';
+                return;
+            }
+
+            let bodyFat = 0;
+            if (gender === 'male') {
+                bodyFat = 495 / (1.0324 - 0.19077 * Math.log10(waist - height) + 0.15456 * Math.log10(height)) - 450;
+            } else {
+                bodyFat = 495 / (1.29579 - 0.35004 * Math.log10(waist + height) + 0.22100 * Math.log10(height)) - 450;
+            }
+            document.getElementById('bf-result').textContent = `Your body fat percentage is ${bodyFat.toFixed(2)}%.`;
+        }
+
+        // Mobile Navbar Toggle
+        const navbar = document.querySelector('.navbar');
+        const navOpenBtn = document.querySelector('.nav-open-btn');
+        const navCloseBtn = document.querySelector('.nav-close-btn');
+        
+        navOpenBtn.addEventListener('click', () => {
+            navbar.classList.add('show');
+        });
+        
+        navCloseBtn.addEventListener('click', () => {
+            navbar.classList.remove('show');
+        });
+    </script>
+</body>
+</html>
