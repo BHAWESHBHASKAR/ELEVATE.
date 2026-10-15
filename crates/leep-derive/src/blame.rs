@@ -48,9 +48,15 @@ impl Repo {
                 Some(p) => self.lookup_file(p, path).await?,
                 None => None,
             };
-            let changed = parent_info.as_ref().is_none_or(|p| p.content != cur_info.content);
+            let changed = parent_info
+                .as_ref()
+                .is_none_or(|p| p.content != cur_info.content);
             if changed {
-                if let Some(v) = self.meta().get_derived("blame", &cache_key(cur, path)).await? {
+                if let Some(v) = self
+                    .meta()
+                    .get_derived("blame", &cache_key(cur, path))
+                    .await?
+                {
                     cached = Some((postcard::from_bytes(&v)?, cur_info));
                     break;
                 }
@@ -91,10 +97,15 @@ impl Repo {
             lines = next;
             old_text = new_text;
         }
-        let resp = BlameResponse { path: path.clone(), lines };
+        let resp = BlameResponse {
+            path: path.clone(),
+            lines,
+        };
         let value = Bytes::from(postcard::to_stdvec(&resp)?);
         for key_id in latest.into_iter().chain([id]) {
-            self.meta().put_derived("blame", &cache_key(key_id, path), value.clone()).await?;
+            self.meta()
+                .put_derived("blame", &cache_key(key_id, path), value.clone())
+                .await?;
         }
         Ok(resp)
     }

@@ -43,14 +43,14 @@ impl Skiplist {
 impl DerivedKind for Skiplist {
     const NAME: &'static str = "skiplist";
 
-    async fn derive(
-        repo: &Repo,
-        _: ChangesetId,
-        cs: &Changeset,
-        _: &[Bytes],
-    ) -> Result<Bytes> {
-        let Some(&p) = cs.parents.first() else { return Ok(Bytes::new()) };
-        let mut list = vec![SkipEntry { id: p, generation: repo.generation(p).await? }];
+    async fn derive(repo: &Repo, _: ChangesetId, cs: &Changeset, _: &[Bytes]) -> Result<Bytes> {
+        let Some(&p) = cs.parents.first() else {
+            return Ok(Bytes::new());
+        };
+        let mut list = vec![SkipEntry {
+            id: p,
+            generation: repo.generation(p).await?,
+        }];
         loop {
             let last = list[list.len() - 1];
             let k = list.len() - 1;

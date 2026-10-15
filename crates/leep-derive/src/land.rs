@@ -17,7 +17,11 @@ impl Repo {
             let new = match head {
                 None => cs,
                 Some(h) if h == cs || self.is_ancestor(cs, h).await? => {
-                    return Ok(LandResponse::Landed { landed: cs, rebased: false, attempts: attempt });
+                    return Ok(LandResponse::Landed {
+                        landed: cs,
+                        rebased: false,
+                        attempts: attempt,
+                    });
                 }
                 Some(h) if changeset.parents.first() == Some(&h) => cs,
                 Some(h) => match self.rebase(cs, h).await? {
@@ -28,7 +32,11 @@ impl Repo {
                 },
             };
             if self.meta().cas_ref(target_ref, head, Some(new)).await? {
-                return Ok(LandResponse::Landed { landed: new, rebased: new != cs, attempts: attempt });
+                return Ok(LandResponse::Landed {
+                    landed: new,
+                    rebased: new != cs,
+                    attempts: attempt,
+                });
             }
             tokio::task::yield_now().await;
         }

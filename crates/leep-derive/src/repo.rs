@@ -43,7 +43,9 @@ impl Repo {
         }
         let mut seen = HashSet::new();
         for (path, change) in &cs.changes {
-            let FileChange::Modify { content, size, .. } = change else { continue };
+            let FileChange::Modify { content, size, .. } = change else {
+                continue;
+            };
             if !seen.insert(*content) {
                 continue;
             }
@@ -65,7 +67,11 @@ impl Repo {
         let tree = apply_changes(self, base, &cs.changes).await?;
         self.meta.put_changeset(&cs).await?;
         self.meta
-            .put_derived(RootTree::NAME_STR, &id.0, Bytes::copy_from_slice(tree.as_bytes()))
+            .put_derived(
+                RootTree::NAME_STR,
+                &id.0,
+                Bytes::copy_from_slice(tree.as_bytes()),
+            )
             .await?;
         derived::derive::<Generation>(self, id).await?;
         derived::derive::<Skiplist>(self, id).await?;

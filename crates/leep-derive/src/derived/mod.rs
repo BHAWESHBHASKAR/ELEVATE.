@@ -17,7 +17,7 @@ use crate::Repo;
 
 pub use generation::Generation;
 pub use root_tree::RootTree;
-pub use skiplist::{Skiplist, SkipEntry};
+pub use skiplist::{SkipEntry, Skiplist};
 
 /// A kind of derived data keyed by changeset id.
 #[async_trait]
@@ -50,7 +50,11 @@ pub async fn derive<K: DerivedKind>(repo: &Repo, id: ChangesetId) -> Result<Byte
     // Iterative post-order DFS over parents that lack a value.
     let mut order: Vec<(ChangesetId, Changeset)> = Vec::new();
     let mut visited: HashSet<ChangesetId> = HashSet::from([id]);
-    let mut stack = vec![Frame { id, cs: repo.get_changeset(id).await?, next: 0 }];
+    let mut stack = vec![Frame {
+        id,
+        cs: repo.get_changeset(id).await?,
+        next: 0,
+    }];
     while let Some(top) = stack.last_mut() {
         if let Some(&p) = top.cs.parents.get(top.next) {
             top.next += 1;
@@ -87,11 +91,15 @@ pub async fn derive<K: DerivedKind>(repo: &Repo, id: ChangesetId) -> Result<Byte
 }
 
 pub(crate) fn decode_hash(b: &[u8]) -> Result<Hash> {
-    let arr: [u8; 32] = b.try_into().map_err(|_| Error::Encoding("bad hash value".into()))?;
+    let arr: [u8; 32] = b
+        .try_into()
+        .map_err(|_| Error::Encoding("bad hash value".into()))?;
     Ok(Hash(arr))
 }
 
 pub(crate) fn decode_u64(b: &[u8]) -> Result<u64> {
-    let arr: [u8; 8] = b.try_into().map_err(|_| Error::Encoding("bad u64 value".into()))?;
+    let arr: [u8; 8] = b
+        .try_into()
+        .map_err(|_| Error::Encoding("bad u64 value".into()))?;
     Ok(u64::from_be_bytes(arr))
 }

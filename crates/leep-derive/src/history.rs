@@ -22,7 +22,9 @@ impl Repo {
         let mut seen = HashSet::from([id]);
         let mut heap = BinaryHeap::from([(self.generation(id).await?, id)]);
         while out.len() < limit {
-            let Some((generation, cid)) = heap.pop() else { break };
+            let Some((generation, cid)) = heap.pop() else {
+                break;
+            };
             let cs = self.get_changeset(cid).await?;
             for &p in &cs.parents {
                 if seen.insert(p) {
@@ -42,7 +44,12 @@ impl Repo {
                     continue;
                 }
             }
-            out.push(ChangesetInfo { id: cid, changeset: cs, generation, root_tree });
+            out.push(ChangesetInfo {
+                id: cid,
+                changeset: cs,
+                generation,
+                root_tree,
+            });
         }
         Ok(out)
     }

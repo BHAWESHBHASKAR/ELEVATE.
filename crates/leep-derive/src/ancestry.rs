@@ -55,11 +55,7 @@ impl Repo {
 
     /// Best common ancestor of `a` and `b`, or `None` for unrelated histories.
     /// With several candidates, the one with the highest generation wins.
-    pub async fn merge_base(
-        &self,
-        a: ChangesetId,
-        b: ChangesetId,
-    ) -> Result<Option<ChangesetId>> {
+    pub async fn merge_base(&self, a: ChangesetId, b: ChangesetId) -> Result<Option<ChangesetId>> {
         if a == b {
             return Ok(Some(a));
         }
@@ -77,7 +73,9 @@ impl Repo {
         let mut candidates = Vec::new();
         let mut result: HashSet<ChangesetId> = HashSet::new();
         while live > 0 {
-            let Some((_, id, stale_at_push)) = heap.pop() else { break };
+            let Some((_, id, stale_at_push)) = heap.pop() else {
+                break;
+            };
             if !stale_at_push {
                 live -= 1;
             }

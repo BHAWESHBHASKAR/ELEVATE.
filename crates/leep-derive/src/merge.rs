@@ -4,9 +4,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bytes::Bytes;
-use leep_core::api::{
-    Conflict, FileInfo, MergeRequest, MergeResponse, RebaseResponse,
-};
+use leep_core::api::{Conflict, FileInfo, MergeRequest, MergeResponse, RebaseResponse};
 use leep_core::changeset::EXTRA_REBASED_FROM;
 use leep_core::{
     Changeset, ChangesetId, Error, FileChange, FileKind, Hash, RepoPath, Result, TreeEntry,
@@ -37,18 +35,26 @@ fn same(a: &Option<FileInfo>, b: &Option<FileInfo>) -> bool {
 
 fn as_change(i: &Option<FileInfo>) -> FileChange {
     match i {
-        Some(i) => FileChange::Modify { content: i.content, kind: i.kind, size: i.size },
+        Some(i) => FileChange::Modify {
+            content: i.content,
+            kind: i.kind,
+            size: i.size,
+        },
         None => FileChange::Delete,
     }
 }
 
 fn now() -> i64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs() as i64)
 }
 
 impl Repo {
     async fn text(&self, info: Option<&FileInfo>) -> Result<Option<String>> {
-        let Some(i) = info else { return Ok(Some(String::new())) };
+        let Some(i) = info else {
+            return Ok(Some(String::new()));
+        };
         let data = self
             .blobs()
             .get(&i.content)
@@ -69,7 +75,9 @@ impl Repo {
         if same(ours, base) {
             return Ok(Resolved::Set(as_change(theirs)));
         }
-        let (Some(o), Some(t)) = (ours, theirs) else { return Ok(Resolved::Conflict(None)) };
+        let (Some(o), Some(t)) = (ours, theirs) else {
+            return Ok(Resolved::Conflict(None));
+        };
         // Both sides changed differently: resolve kind and content separately.
         let base_kind = base.as_ref().map(|b| b.kind);
         let kind = if o.kind == t.kind {
@@ -103,13 +111,21 @@ impl Repo {
                     let bytes = Bytes::from(merged.into_bytes());
                     let size = bytes.len() as u64;
                     let content = self.blobs().put(bytes).await?;
-                    return Ok(Resolved::Set(FileChange::Modify { content, kind, size }));
+                    return Ok(Resolved::Set(FileChange::Modify {
+                        content,
+                        kind,
+                        size,
+                    }));
                 }
                 Err(marked) => return Ok(Resolved::Conflict(Some(marked))),
             }
         };
         let size = if content == o.content { o.size } else { t.size };
-        let new = FileChange::Modify { content, kind, size };
+        let new = FileChange::Modify {
+            content,
+            kind,
+            size,
+        };
         if new == as_change(ours) {
             Ok(Resolved::Keep)
         } else {
@@ -133,9 +149,9 @@ impl Repo {
             let entry = self.entry_at(ours, &prefix).await?;
             if prefix == p.as_str() {
                 return Ok(matches!(entry, Some(TreeEntry::Dir { .. }))
-                    && !changes.iter().any(|(k, c)| {
-                        k.is_within(p.as_str()) && matches!(c, FileChange::Delete)
-                    }));
+                    && !changes
+                        .iter()
+                        .any(|(k, c)| k.is_within(p.as_str()) && matches!(c, FileChange::Delete)));
             }
             match entry {
                 Some(TreeEntry::File { .. }) => {
@@ -227,7 +243,9 @@ impl Repo {
             )
             .await?;
         if !m.conflicts.is_empty() {
-            return Ok(MergeResponse::Conflicts { conflicts: m.conflicts });
+            return Ok(MergeResponse::Conflicts {
+                conflicts: m.conflicts,
+            });
         }
         let id = self
             .create_changeset(Changeset {
@@ -260,7 +278,9 @@ impl Repo {
             )
             .await?;
         if !m.conflicts.is_empty() {
-            return Ok(RebaseResponse::Conflicts { conflicts: m.conflicts });
+            return Ok(RebaseResponse::Conflicts {
+                conflicts: m.conflicts,
+            });
         }
         let mut extra = orig.extra;
         extra.insert(EXTRA_REBASED_FROM.into(), cs.to_string());

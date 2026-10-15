@@ -4,9 +4,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use bytes::Bytes;
 use leep_core::api::{DiffEntry, FileInfo, TreeResponse};
-use leep_core::{
-    ChangesetId, Error, FileChange, Hash, RepoPath, Result, TreeEntry, TreeNode,
-};
+use leep_core::{ChangesetId, Error, FileChange, Hash, RepoPath, Result, TreeEntry, TreeNode};
 
 use crate::Repo;
 
@@ -32,9 +30,16 @@ fn depth(dir: &str) -> usize {
 
 pub(crate) fn file_info(path: RepoPath, e: &TreeEntry) -> Option<FileInfo> {
     match e {
-        TreeEntry::File { content, kind, size } => {
-            Some(FileInfo { path, content: *content, kind: *kind, size: *size })
-        }
+        TreeEntry::File {
+            content,
+            kind,
+            size,
+        } => Some(FileInfo {
+            path,
+            content: *content,
+            kind: *kind,
+            size: *size,
+        }),
         TreeEntry::Dir { .. } => None,
     }
 }
@@ -77,7 +82,9 @@ pub(crate) async fn apply_changes(
     if changes.is_empty() {
         if base == TreeNode::empty_hash() {
             let empty = TreeNode::default();
-            repo.blobs().put_with_hash(base, Bytes::from(empty.encode())).await?;
+            repo.blobs()
+                .put_with_hash(base, Bytes::from(empty.encode()))
+                .await?;
         }
         return Ok(base);
     }
@@ -106,7 +113,14 @@ pub(crate) async fn apply_changes(
         prune(&mut nodes);
     }
     for (path, change) in changes {
-        let FileChange::Modify { content, kind, size } = change else { continue };
+        let FileChange::Modify {
+            content,
+            kind,
+            size,
+        } = change
+        else {
+            continue;
+        };
         let dir = parent_dir(path.as_str());
         ensure_dir(repo, &mut nodes, dir, true).await?;
         let node = nodes.get_mut(dir).expect("loaded");
@@ -115,7 +129,11 @@ pub(crate) async fn apply_changes(
         }
         node.entries.insert(
             path.file_name().to_string(),
-            TreeEntry::File { content: *content, kind: *kind, size: *size },
+            TreeEntry::File {
+                content: *content,
+                kind: *kind,
+                size: *size,
+            },
         );
     }
 
@@ -130,13 +148,19 @@ pub(crate) async fn apply_changes(
             parent.entries.remove(name);
         } else {
             let h = node.hash();
-            repo.blobs().put_with_hash(h, Bytes::from(node.encode())).await?;
-            parent.entries.insert(name.to_string(), TreeEntry::Dir { tree: h });
+            repo.blobs()
+                .put_with_hash(h, Bytes::from(node.encode()))
+                .await?;
+            parent
+                .entries
+                .insert(name.to_string(), TreeEntry::Dir { tree: h });
         }
     }
     let root = nodes.remove("").expect("root");
     let h = root.hash();
-    repo.blobs().put_with_hash(h, Bytes::from(root.encode())).await?;
+    repo.blobs()
+        .put_with_hash(h, Bytes::from(root.encode()))
+        .await?;
     Ok(h)
 }
 
@@ -160,7 +184,9 @@ impl Repo {
     pub(crate) async fn entry_at(&self, tree: Hash, path: &str) -> Result<Option<TreeEntry>> {
         let mut cur = TreeEntry::Dir { tree };
         for comp in path.split('/').filter(|c| !c.is_empty()) {
-            let TreeEntry::Dir { tree } = cur else { return Ok(None) };
+            let TreeEntry::Dir { tree } = cur else {
+                return Ok(None);
+            };
             match self.read_tree(tree).await?.entries.remove(comp) {
                 Some(e) => cur = e,
                 None => return Ok(None),
@@ -195,7 +221,8 @@ impl Repo {
         let prefix = prefix.trim_matches('/');
         let root = self.root_tree(id).await?;
         let mut out = Vec::new();
-        self.collect_files(prefix, self.entry_at(root, prefix).await?, &mut out).await?;
+        self.collect_files(prefix, self.entry_at(root, prefix).await?, &mut out)
+            .await?;
         out.sort_by(|a, b| a.path.cmp(&b.path));
         Ok(out)
     }
@@ -231,12 +258,13 @@ impl Repo {
         id: ChangesetId,
         path: &RepoPath,
     ) -> Result<Option<(FileInfo, Bytes)>> {
-        let Some(info) = self.lookup_file(id, path).await? else { return Ok(None) };
-        let data = self
-            .blobs()
-            .get(&info.content)
-            .await?
-            .ok_or_else(|| Error::Storage(format!("blob {} missing for {path}", info.content)))?;
+        let Some(info) = self.lookup_file(id, path).await? else {
+            return Ok(None);
+        };
+        let data =
+            self.blobs().get(&info.content).await?.ok_or_else(|| {
+                Error::Storage(format!("blob {} missing for {path}", info.content))
+            })?;
         Ok(Some((info, data)))
     }
 
@@ -274,17 +302,14 @@ impl Repo {
                 continue;
             }
             // A file opposite a directory is a one-sided file change.
-            let file_side = |e: &Option<TreeEntry>, d: Option<Hash>, rp: &RepoPath| {
-                if d.is_some() {
-                    None
-                } else {
-                    e.as_ref().and_then(|e| file_info(rp.clone(), e))
-                }
-            };
-            let rp = RepoPath::new(path.clone())?;
-            let (o, n) = (file_side(&old, old_dir, &rp), file_side(&new, new_dir, &rp));
-            if o.is_some() || n.is_some() {
-                out.push(DiffEntry { path: rp, old: o, new: n });
+            let is_file = |e: &Option<TreeEntry>| matches!(e, Some(TreeEntry::File { .. }));
+            if is_file(&old) || is_file(&new) {
+                let rp = RepoPath::new(path.clone())?;
+                out.push(DiffEntry {
+                    old: old.as_ref().and_then(|e| file_info(rp.clone(), e)),
+                    new: new.as_ref().and_then(|e| file_info(rp.clone(), e)),
+                    path: rp,
+                });
             }
             let load = |t: Option<Hash>| async move {
                 match t {
